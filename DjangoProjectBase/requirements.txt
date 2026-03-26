@@ -5,3 +5,4 @@ requests
 matplotlib
 django
 pillow
+huggingface_hub

@@ -1,0 +1,12 @@
+<h1>Recomendador de Películas 🎬</h1>
+
+<form method="GET">
+    <input type="text" name="prompt" placeholder="Ej: película de guerra">
+    <button type="submit">Buscar</button>
+</form>
+
+{% if recommended_movie %}
+    <h2>Recomendada: {{ recommended_movie.title }}</h2>
+    <p>{{ recommended_movie.description }}</p>
+    <img src="{{ recommended_movie.image.url }}" width="200">
+{% endif %}

@@ -123,3 +123,30 @@ def generate_bar_chart(data, xlabel, ylabel):
     buffer.close()
     graphic = base64.b64encode(image_png).decode('utf-8')
     return graphic
+
+
+def recommend_view(request):
+    prompt = request.GET.get('prompt')
+    recommended_movie = None
+
+    if prompt:
+        recommended_movie = recommend_movie(prompt)
+
+    return render(request, 'recommend.html', {
+        'recommended_movie': recommended_movie,
+        'prompt': prompt
+    })
+
+
+
+def recommend_view(request):
+    prompt = request.GET.get('prompt')
+    recommended_movie = None
+
+    if prompt:
+        recommended_movie = recommend_movie(prompt)
+
+    return render(request, 'recommend.html', {
+        'recommended_movie': recommended_movie,
+        'prompt': prompt
+    })
