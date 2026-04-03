@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Movie Recommender{% endblock %}
+
+{% block extra_css %}
+<style>
+  :root {
+    --gold: #f0c040;
+    --gold-dim: #b8902e;
+    --bg-deep: #0a0a0f;
+    --bg-card: #12121a;
+    --border: rgba(240,192,64,0.18);
+    --text: #e8e4d8;
+    --text-muted: #7a7468;
+    --radius: 16px;
+  }
+
+  body { background: var(--bg-deep); color: var(--text); }
+
+  .rec-hero {
+    background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(240,192,64,0.12), transparent 70%);
+    padding: 60px 0 40px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .rec-hero .badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border: 1px solid var(--border);
+    padding: 5px 14px;
+    border-radius: 100px;
+    margin-bottom: 18px;
+  }
+  .rec-hero h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 700;
+    color: #fff;
+    margin: 0 0 10px;
+  }
+  .rec-hero h1 em { color: var(--gold); font-style: italic; }
+  .rec-hero p { color: var(--text-muted); max-width: 440px; margin: 0 auto; line-height: 1.6; }
+
+  .rec-wrap { max-width: 700px; margin: 48px auto 0; padding: 0 20px; }
+
+  .rec-box {
+    background: #12121a;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+  }
+  .rec-box:focus-within { border-color: var(--gold-dim); }
+  .rec-box label {
+    display: block;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 12px;
+  }
+  .rec-textarea {
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 1rem;
+    resize: none;
+    line-height: 1.6;
+    min-height: 70px;
+  }
+  .rec-textarea::placeholder { color: var(--text-muted); }
+  .rec-divider { height: 1px; background: var(--border); margin: 16px 0; }
+  .rec-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .rec-hint { font-size: 0.78rem; color: var(--text-muted); }
+  .rec-hint span { color: var(--gold-dim); }
+
+  .rec-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--gold);
+    color: #0a0a0f;
+    border: none;
+    border-radius: 10px;
+    padding: 11px 24px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .rec-btn:hover { background: #f5cc55; transform: translateY(-1px); }
+
+  .rec-error { max-width: 700px; margin: 20px auto 0; padding: 0 20px; }
+  .rec-error-inner {
+    background: rgba(220,60,60,0.08);
+    border: 1px solid rgba(220,60,60,0.25);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    color: #e57373;
+    font-size: 0.9rem;
+  }
+
+  .rec-result { max-width: 900px; margin: 48px auto 60px; padding: 0 20px; animation: fadeUp 0.5s ease both; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+
+  .rec-result-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .rec-result-label::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  .rec-card {
+    background: #12121a;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .rec-card-img { position: relative; overflow: hidden; background: #1a1a24; }
+  .rec-card-img img { width:100%; height:100%; object-fit:cover; display:block; transition: transform 0.5s; }
+  .rec-card:hover .rec-card-img img { transform: scale(1.04); }
+  .rec-card-img::after {
+    content:'';
+    position:absolute; inset:0;
+    background: linear-gradient(to right, transparent 60%, #12121a);
+  }
+
+  .rec-card-body { padding: 32px; display:flex; flex-direction:column; justify-content:center; gap:14px; }
+
+  .rec-tags { display:flex; gap:8px; flex-wrap:wrap; }
+  .rec-tag {
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-weight: 500;
+  }
+  .rec-tag-gold { background: rgba(240,192,64,0.12); color: var(--gold); border: 1px solid rgba(240,192,64,0.25); }
+  .rec-tag-dim  { background: rgba(255,255,255,0.04); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.07); }
+
+  .rec-card-title { font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 700; color: #fff; margin: 0; }
+  .rec-card-desc  { color: var(--text-muted); font-size: 0.9rem; line-height: 1.7; margin: 0; }
+
+  .rec-sim { display:flex; align-items:center; gap:10px; }
+  .rec-sim-label { font-size:0.72rem; text-transform:uppercase; letter-spacing:.15em; color:var(--text-muted); }
+  .rec-sim-bar { flex:1; height:4px; background:rgba(255,255,255,0.07); border-radius:99px; overflow:hidden; }
+  .rec-sim-fill {
+    height: 100%;
+    width: var(--sim-width, 0%);
+    background: linear-gradient(to right, var(--gold-dim), var(--gold));
+    border-radius: 99px;
+  }
+  .rec-sim-val { font-size:0.82rem; color:var(--gold); font-weight:500; min-width:40px; text-align:right; }
+
+  .rec-loading {
+    display: none; position:fixed; inset:0;
+    background:rgba(10,10,15,0.85); backdrop-filter:blur(6px);
+    z-index:9999; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+  }
+  .rec-loading.active { display:flex; }
+  .rec-spinner {
+    width:42px; height:42px;
+    border:3px solid rgba(240,192,64,0.15);
+    border-top-color:var(--gold);
+    border-radius:50%;
+    animation:spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .rec-loading p { color:var(--text-muted); font-size:0.85rem; }
+
+  @media(max-width:620px){
+    .rec-card { grid-template-columns:1fr; }
+    .rec-card-img { height:200px; }
+    .rec-footer { flex-direction:column; align-items:stretch; }
+    .rec-btn { justify-content:center; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="rec-loading" id="rec-loading">
+  <div class="rec-spinner"></div>
+  <p>Searching with AI…</p>
+</div>
+
+<div class="rec-hero">
+  <span class="badge">&#9889; OpenAI Embeddings</span>
+  <h1>Find your next<br><em>favorite movie</em></h1>
+  <p>Describe what you want to watch and the AI will find the most similar movie.</p>
+</div>
+
+<div class="rec-wrap">
+  <form method="POST" onsubmit="document.getElementById('rec-loading').classList.add('active')">
+    {% csrf_token %}
+    <div class="rec-box">
+      <label for="prompt">What kind of movie are you looking for?</label>
+      <textarea
+        class="rec-textarea"
+        id="prompt"
+        name="prompt"
+        rows="2"
+        placeholder="Example: Epic World War II movie…"
+      >{{ prompt }}</textarea>
+      <div class="rec-divider"></div>
+      <div class="rec-footer">
+        <span class="rec-hint">Use natural language — <span>more details = better results</span></span>
+        <button type="submit" class="rec-btn">&#128269; Recommend</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% if error %}
+<div class="rec-error">
+  <div class="rec-error-inner">&#9888;&#65039; {{ error }}</div>
+</div>
+{% endif %}
+
+{% if movie %}
+<div class="rec-result">
+  <div class="rec-result-label">Recommended Movie</div>
+
+  <div class="rec-card">
+    <div class="rec-card-img">
+      {% if movie.image %}
+        <img src="{{ movie.image.url }}" alt="{{ movie.title }}">
+      {% else %}
+        <img src="{% static 'movie/images/default.jpg' %}" alt="No image">
+      {% endif %}
+    </div>
+
+    <div class="rec-card-body">
+      <div class="rec-tags">
+        {% if movie.genre %}<span class="rec-tag rec-tag-gold">{{ movie.genre }}</span>{% endif %}
+        {% if movie.year %}<span class="rec-tag rec-tag-dim">{{ movie.year }}</span>{% endif %}
+      </div>
+
+      <h2 class="rec-card-title">{{ movie.title }}</h2>
+      <p class="rec-card-desc">{{ movie.description }}</p>
+
+      {% if similarity %}
+      <div class="rec-sim">
+        <span class="rec-sim-label">Similarity</span>
+        <div class="rec-sim-bar">
+          <div class="rec-sim-fill" style="--sim-width: {{ similarity }}%;"></div>
+        </div>
+        <span class="rec-sim-val">{{ similarity }}%</span>
+      </div>
+      {% endif %}
+
+      {% if movie.url %}
+      <a href="{{ movie.url }}" target="_blank" style="color:var(--gold);font-size:.85rem;text-decoration:none;">
+        Watch movie &#8599;
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
